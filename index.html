@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silverclaw Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background-color: #2b2b2b;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            width: 350px;
+            border: 1px solid #444;
+        }
+        h2 {
+            margin-top: 0;
+            color: #e0e0e0;
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #aaa;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: 1px solid #444;
+            background-color: #121212;
+            color: #fff;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            background-color: #d9534f;
+            color: white;
+            border: none;
+            padding: 12px;
+            margin-top: 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #c9302c;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🐺 SILVERCLAW</h2>
+    
+    <label for="speler">Spelernaam</label>
+    <input type="text" id="speler" placeholder="Bijv. raymondlion" value="raymondlion">
+    
+    <label for="onderwerp">Onderwerp</label>
+    <input type="text" id="onderwerp" value="Silverclaw zoekt jou!">
+    
+    <label for="bericht">Bericht</label>
+    <textarea id="bericht" rows="4">Hey [speler]raymondlion[/speler],
+
+Sluit je aan bij familie Silverclaw!</textarea>
+    
+    <button onclick="stuurBericht()">🚀 STUUR BERICHT</button>
+</div>
+
+<script>
+function stuurBericht() {
+    const speler = document.getElementById('speler').value;
+    const onderwerp = document.getElementById('onderwerp').value;
+    const bericht = document.getElementById('bericht').value;
+    
+    if (!speler) {
+        alert("Vul een spelernaam in!");
+        return;
+    }
+
+    const mafiawayUrl = `https://www.mafiaway.nl/message.php?p=new` +
+        `&to=${encodeURIComponent(speler)}` +
+        `&subject=${encodeURIComponent(onderwerp)}` +
+        `&msg=${encodeURIComponent(bericht)}`;
+
+    window.open(mafiawayUrl, '_blank');
+}
+</script>
+
+</body>
+</html>
