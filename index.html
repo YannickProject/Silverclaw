@@ -51,7 +51,7 @@
         .btn-group {
             display: flex;
             gap: 10px;
-            margin-top: 15px;
+            margin-top: 10px;
         }
         button {
             border: none;
@@ -68,11 +68,19 @@
         }
         .btn-random:hover { background-color: #357abd; }
         
+        .btn-import {
+            background-color: #5cb85c;
+            color: white;
+            width: 100%;
+            margin-top: 8px;
+        }
+        .btn-import:hover { background-color: #4cae4c; }
+
         .btn-send {
             background-color: #d9534f;
             color: white;
             width: 100%;
-            margin-top: 15px;
+            margin-top: 20px;
         }
         .btn-send:hover { background-color: #c9302c; }
 
@@ -85,7 +93,6 @@
         }
         .btn-clear:hover { background-color: #777; }
 
-        /* Tabel styling voor Logboek */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -107,6 +114,7 @@
         .status-select {
             padding: 5px;
             font-size: 12px;
+            background-color: #222;
         }
         .delete-btn {
             background-color: transparent;
@@ -115,20 +123,35 @@
             cursor: pointer;
             font-weight: bold;
         }
+        .counter {
+            font-size: 13px;
+            color: #4a90e2;
+            margin-top: 5px;
+            display: block;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <!-- IMPORTEER CARD -->
+    <div class="card">
+        <h2>📥 Importeer Spelers (Zonder Familie)</h2>
+        <label for="lijstInvoer">Plak hier de gekopieerde lijst van Mafiaway (list.php?s=fam):</label>
+        <textarea id="lijstInvoer" rows="2" placeholder='Plak hier de lijst uit Tampermonkey...'></textarea>
+        <button class="btn-import" onclick="importeerLijst()">📥 Importeer Lijst</button>
+        <span class="counter" id="lijstTeller">Geladen spelers zonder familie: 0</span>
+    </div>
+
     <!-- BERICHT VERSTUREN CARD -->
     <div class="card">
         <h2>🐺 SILVERCLAW OUTREACH</h2>
         
         <label for="speler">Spelernaam</label>
-        <input type="text" id="speler" placeholder="Voer naam in of kies een willekeurige speler">
+        <input type="text" id="speler" placeholder="Voer naam in of kies willekeurig">
         
         <div class="btn-group">
-            <button class="btn-random" onclick="kiesRandomSpeler()">🎲 Kies Willekeurige Speler</button>
+            <button class="btn-random" onclick="kiesRandomSpeler()">🎲 Kies Random Familieloze Speler</button>
         </div>
         
         <label for="onderwerp">Onderwerp</label>
@@ -156,24 +179,53 @@ Sluit je aan bij familie Silverclaw!</textarea>
                     <th>Actie</th>
                 </tr>
             </thead>
-            <tbody id="logboekBody">
-                <!-- Wordt dynamisch opgevuld vanuit localStorage -->
-            </tbody>
+            <tbody id="logboekBody"></tbody>
         </table>
     </div>
 </div>
 
 <script>
-// Vul hier jouw lijst met potentiële Mafiaway spelers in:
-const spelersLijst = [
-    "raymondlion",
-    "Welcool"
-];
+let spelersLijst = JSON.parse(localStorage.getItem('silverclaw_vrije_spelers')) || [];
+
+function updateTeller() {
+    document.getElementById('lijstTeller').innerText = `Geladen spelers zonder familie: ${spelersLijst.length}`;
+}
+
+function importeerLijst() {
+    const invoer = document.getElementById('lijstInvoer').value.trim();
+    try {
+        const gelezenLijst = JSON.parse(invoer);
+        if (Array.isArray(gelezenLijst)) {
+            spelersLijst = gelezenLijst;
+            localStorage.setItem('silverclaw_vrije_spelers', JSON.stringify(spelersLijst));
+            updateTeller();
+            alert(`${spelersLijst.length} familieloze spelers succesvol geïmporteerd!`);
+            document.getElementById('lijstInvoer').value = '';
+        } else {
+            alert("Ongeldig formaat. Gebruik de rode knop op Mafiaway.");
+        }
+    } catch(e) {
+        alert("Fout bij het lezen. Zorg dat je de gekopieerde tekst van de rode knop op Mafiaway plakt.");
+    }
+}
 
 function kiesRandomSpeler() {
-    if (spelersLijst.length === 0) return;
-    const willekeurigeIndex = Math.floor(Math.random() * spelersLijst.length);
-    document.getElementById('speler').value = spelersLijst[willekeurigeIndex];
+    if (spelersLijst.length === 0) {
+        alert("Geen familieloze spelers geladen!\n\n1. Ga op Mafiaway naar list.php?s=fam\n2. Klik op de rode knop rechtsboven\n3. Plak die tekst hierboven bij 'Importeer Spelers'.");
+        return;
+    }
+    
+    const logboek = haalLogboekOp();
+    const reedsBenaderd = logboek.map(item => item.speler.toLowerCase());
+    const nogNietBenaderd = spelersLijst.filter(speler => !reedsBenaderd.includes(speler.toLowerCase()));
+
+    if (nogNietBenaderd.length === 0) {
+        alert("Alle spelers uit je familieloze lijst zijn al aangeschreven!");
+        return;
+    }
+
+    const willekeurigeIndex = Math.floor(Math.random() * nogNietBenaderd.length);
+    document.getElementById('speler').value = nogNietBenaderd[willekeurigeIndex];
 }
 
 function stuurBericht() {
@@ -186,13 +238,9 @@ function stuurBericht() {
         return;
     }
 
-    // Dynamic name placeholder
     bericht = bericht.replace(/{speler}/g, speler);
-
-    // 1. Voeg toe aan logboek
     voegToeAanLogboek(speler);
 
-    // 2. Open Mafiaway met parameters voor Tampermonkey
     const mafiawayUrl = `https://www.mafiaway.nl/message.php?p=new` +
         `&to=${encodeURIComponent(speler)}` +
         `&subject=${encodeURIComponent(onderwerp)}` +
@@ -201,7 +249,6 @@ function stuurBericht() {
     window.open(mafiawayUrl, '_blank');
 }
 
-// Logboek Functionaliteit
 function haalLogboekOp() {
     return JSON.parse(localStorage.getItem('silverclaw_logboek')) || [];
 }
@@ -214,7 +261,6 @@ function voegToeAanLogboek(speler) {
     const logboek = haalLogboekOp();
     const datum = new Date().toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' });
     
-    // Voeg toe bovenaan de lijst
     logboek.unshift({
         id: Date.now(),
         speler: speler,
@@ -255,7 +301,7 @@ function laadLogboekTabel() {
     tbody.innerHTML = '';
 
     if (logboek.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#777;">Nog geen berichten verzonden via Silverclaw.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#777;">Nog geen berichten verzonden.</td></tr>';
         return;
     }
 
@@ -269,7 +315,7 @@ function laadLogboekTabel() {
                     <option value="⏳ Wacht op reactie" ${item.status === '⏳ Wacht op reactie' ? 'selected' : ''}>⏳ Wacht op reactie</option>
                     <option value="✅ Gereageerd" ${item.status === '✅ Gereageerd' ? 'selected' : ''}>✅ Gereageerd</option>
                     <option value="❌ Geen interesse" ${item.status === '❌ Geen interesse' ? 'selected' : ''}>❌ Geen interesse</option>
-                    <option value="🤝 Lede geworden" ${item.status === '🤝 Lede geworden' ? 'selected' : ''}>🤝 Lid geworden</option>
+                    <option value="🤝 Lid geworden" ${item.status === '🤝 Lid geworden' ? 'selected' : ''}>🤝 Lid geworden</option>
                 </select>
             </td>
             <td>
@@ -280,7 +326,8 @@ function laadLogboekTabel() {
     });
 }
 
-// Laad direct bij opstarten
+// Opstarten
+updateTeller();
 laadLogboekTabel();
 </script>
 
